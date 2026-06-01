@@ -10,4 +10,4 @@ urlpatterns = [
     path('candidate-lists/', views.CandidateListView.as_view(), name='candidate-lists'),
     path('candidate-lists/<int:pk>/', views.CandidateListView.as_view(), name='candidate-list-detail'),
 
-] 
+]
