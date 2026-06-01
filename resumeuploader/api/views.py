@@ -6,7 +6,19 @@ from rest_framework import status
 
 # Create your views here.
 class ProfileView(APIView):
+    """API endpoint for managing individual candidate profiles.
+
+    Supports POST (create), GET (list or retrieve by pk), and DELETE
+    operations on the Profile model. Handles multipart form data for
+    profile image and resume file uploads.
+    """
+
     def post(self, request, format=None):
+        """Create a new candidate profile with resume and image uploads.
+
+        Accepts multipart/form-data with candidate fields, profile image,
+        and resume file. Returns the created candidate data on success.
+        """
         serializer = Profileserializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -14,6 +26,11 @@ class ProfileView(APIView):
         return Response(serializer.error)
 
     def get(self, request, pk=None, format=None):
+        """Retrieve a single profile by id or list all candidate profiles.
+
+        When ``pk`` is provided, returns the matching Profile or a 404.
+        Otherwise returns all Profile records.
+        """
         if pk:
             try:
                 candidate = Profile.objects.get(id=pk)
@@ -27,6 +44,11 @@ class ProfileView(APIView):
             return Response({'status': 'success', 'candidates': serializer.data}, status=status.HTTP_200_OK)
 
     def delete(self, request, pk=None):
+        """Delete a candidate profile by primary key.
+
+        Removes the Profile record and its associated file uploads.
+        Returns a success message on completion.
+        """
         print(pk)
         id=pk
         candidate = Profile.objects.get(pk=id)
@@ -42,6 +64,11 @@ class CandidateListView(APIView):
     """
 
     def post(self, request, format=None):
+        """Create a new candidate list with optional associated profiles.
+
+        Accepts JSON with title, description, and candidate IDs.
+        Returns the created CandidateList on success.
+        """
         serializer = CandidateListSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -54,6 +81,12 @@ class CandidateListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, pk=None, format=None):
+        """Retrieve a single candidate list by id or list all candidate lists.
+
+        When ``pk`` is provided, returns the matching CandidateList with
+        prefetched candidate profiles, or a 404. Otherwise returns all
+        CandidateList records.
+        """
         if pk:
             try:
                 candidate_list = CandidateList.objects.prefetch_related('candidates').get(id=pk)
@@ -76,6 +109,11 @@ class CandidateListView(APIView):
             )
 
     def put(self, request, pk=None, format=None):
+        """Partially update an existing candidate list by primary key.
+
+        Accepts a JSON partial update. Returns the updated CandidateList
+        on success or a 404 if the list does not exist.
+        """
         try:
             candidate_list = CandidateList.objects.get(id=pk)
         except CandidateList.DoesNotExist:
@@ -95,6 +133,11 @@ class CandidateListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk=None):
+        """Delete a candidate list by primary key.
+
+        Removes the CandidateList record (the associated Profile
+        instances are not deleted). Returns a 404 if not found.
+        """
         try:
             candidate_list = CandidateList.objects.get(id=pk)
         except CandidateList.DoesNotExist:

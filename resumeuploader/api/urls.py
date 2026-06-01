@@ -1,3 +1,9 @@
+"""URL configuration for the API application.
+
+Defines endpoints for candidate profile uploads, listing, retrieval,
+deletion, and CandidateList CRUD operations.
+"""
+
 from django.urls import path
 from api import views
 
