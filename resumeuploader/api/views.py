@@ -1,6 +1,6 @@
 from rest_framework.response import Response
-from api.models import Profile, CandidateList
-from api.serializers import Profileserializer, CandidateListSerializer
+from api.models import Profile, CandidateList, Skill
+from api.serializers import Profileserializer, CandidateListSerializer, SkillSerializer
 from rest_framework.views import APIView
 from rest_framework import status
 
@@ -148,5 +148,109 @@ class CandidateListView(APIView):
         candidate_list.delete()
         return Response(
             {'msg': 'Candidate list deleted successfully', 'status': 'success'},
+            status=status.HTTP_200_OK,
+        )
+
+
+class SkillView(APIView):
+    """API endpoint for managing candidate skills and qualifications.
+
+    Provides CRUD operations on the Skill model. Each skill is scoped
+    to a candidate Profile via a foreign key. Supports listing,
+    creating, retrieving by id, updating, and deleting skills.
+    """
+
+    def post(self, request, format=None):
+        """Create a new skill record for a candidate.
+
+        Accepts JSON with ``profile`` (id), ``name``, ``proficiency``,
+        and ``years_experience``. Returns the created Skill on success.
+        """
+        serializer = SkillSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    'msg': 'Skill created successfully',
+                    'status': 'success',
+                    'skill': serializer.data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk=None, format=None):
+        """Retrieve a single skill by id or list all skills.
+
+        When ``pk`` is provided, returns the matching Skill or a 404.
+        Supports optional ``?profile=<id>`` query parameter to filter
+        skills by candidate profile.
+        """
+        if pk:
+            try:
+                skill = Skill.objects.get(id=pk)
+                serializer = SkillSerializer(skill)
+                return Response(
+                    {'status': 'success', 'skill': serializer.data},
+                    status=status.HTTP_200_OK,
+                )
+            except Skill.DoesNotExist:
+                return Response(
+                    {'error': 'Skill not found'},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        queryset = Skill.objects.all()
+        profile_id = request.query_params.get('profile')
+        if profile_id:
+            queryset = queryset.filter(profile_id=profile_id)
+
+        serializer = SkillSerializer(queryset, many=True)
+        return Response(
+            {'status': 'success', 'skills': serializer.data},
+            status=status.HTTP_200_OK,
+        )
+
+    def put(self, request, pk=None, format=None):
+        """Partially update an existing skill by primary key.
+
+        Accepts a JSON partial update. Returns the updated Skill
+        on success or a 404 if the skill does not exist.
+        """
+        try:
+            skill = Skill.objects.get(id=pk)
+        except Skill.DoesNotExist:
+            return Response(
+                {'error': 'Skill not found'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = SkillSerializer(skill, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    'msg': 'Skill updated successfully',
+                    'status': 'success',
+                    'skill': serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk=None):
+        """Delete a skill by primary key.
+
+        Removes the Skill record. Returns a 404 if not found.
+        """
+        try:
+            skill = Skill.objects.get(id=pk)
+        except Skill.DoesNotExist:
+            return Response(
+                {'error': 'Skill not found'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        skill.delete()
+        return Response(
+            {'msg': 'Skill deleted successfully', 'status': 'success'},
             status=status.HTTP_200_OK,
         )
