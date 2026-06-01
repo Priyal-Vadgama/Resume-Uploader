@@ -1,3 +1,13 @@
+/**
+ * Main application component for the Resume Uploader.
+ *
+ * Provides a form for submitting candidate profiles (name, email, DOB,
+ * state, gender, location, profile image, and resume file) and displays
+ * the list of previously submitted candidates in a table. Includes
+ * delete functionality for removing candidate entries.
+ *
+ * @component
+ */
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "./index.css";
@@ -23,6 +33,10 @@ function App() {
     fetchCandidates();
   }, []);
 
+  /**
+   * Fetches the list of all candidates from the API and updates state.
+   * Sets fetching=true during the request and fetching=false on completion.
+   */
   const fetchCandidates = async () => {
     setFetching(true);
     try {
@@ -36,6 +50,12 @@ function App() {
     }
   };
 
+  /**
+   * Updates formData state on input change.
+   * Handles both regular inputs (value) and file inputs (files[0]).
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Change event from a form input.
+   */
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
     if (type === "file") {
@@ -44,6 +64,11 @@ function App() {
       setFormData({ ...formData, [name]: value });
     }
   };
+  /**
+   * Sends a DELETE request for a candidate by ID, then refreshes the list.
+   *
+   * @param {number} id - The candidate ID to delete.
+   */
   const handleDelete = async (id) => {
     try {
       await axios.delete(`http://127.0.0.1:8000/api/list/${id}/`);
@@ -56,6 +81,12 @@ function App() {
     }
   };
   
+  /**
+   * Submits the form data as multipart/form-data to create a new candidate.
+   * Resets the form and refreshes the candidate list on success.
+   *
+   * @param {React.FormEvent<HTMLFormElement>} e - Form submit event.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
