@@ -2,6 +2,11 @@ from django.db import models
 
 # Create your models here.
 class Profile(models.Model):
+    """Represents a candidate profile with personal details and uploaded files.
+
+    Stores the candidate's name, email, date of birth, state, gender,
+    location, and optional profile image and resume file uploads.
+    """
     name = models.CharField(max_length=100)
     email = models.EmailField()
     dob = models.DateField(auto_now=False, auto_now_add=False)

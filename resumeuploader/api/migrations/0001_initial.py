@@ -4,6 +4,11 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """Initial migration for the Resume Uploader API.
+
+    Creates the ``Profile`` table with fields for candidate personal
+    details, profile image, and resume file uploads.
+    """
 
     initial = True
 
