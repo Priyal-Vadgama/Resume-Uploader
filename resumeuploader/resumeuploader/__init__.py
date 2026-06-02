@@ -1,1 +1,0 @@
-"""Resume Uploader – Django project root package."""
