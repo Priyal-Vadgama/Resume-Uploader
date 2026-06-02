@@ -1,8 +1,10 @@
+from django.db.models import Q
+from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from api.models import Profile, CandidateList, Skill
 from api.serializers import Profileserializer, CandidateListSerializer, SkillSerializer
-from rest_framework.views import APIView
-from rest_framework import status
 
 # Create your views here.
 class ProfileView(APIView):
@@ -30,6 +32,17 @@ class ProfileView(APIView):
 
         When ``pk`` is provided, returns the matching Profile or a 404.
         Otherwise returns all Profile records.
+
+        Supports optional query parameter filtering:
+        - ``?name=<str>`` : exact match on name
+        - ``?name__icontains=<str>`` : case-insensitive substring match on name
+        - ``?email=<str>`` : exact match on email
+        - ``?email__icontains=<str>`` : case-insensitive substring match on email
+        - ``?state=<str>`` : exact match on state
+        - ``?gender=<str>`` : exact match on gender
+        - ``?location__icontains=<str>`` : case-insensitive substring match on location
+        - ``?search=<str>`` : case-insensitive search across name, email, state, and location
+        - ``?ordering=<field>`` : order by a field (prefix with ``-`` for descending, e.g. ``-dob``)
         """
         if pk:
             try:
@@ -38,10 +51,57 @@ class ProfileView(APIView):
                 return Response({'status': 'success', 'candidate': serializer.data}, status=status.HTTP_200_OK)
             except Profile.DoesNotExist:
                 return Response({'error': 'Candidate not found'}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            candidates = Profile.objects.all()
-            serializer = Profileserializer(candidates, many=True)
-            return Response({'status': 'success', 'candidates': serializer.data}, status=status.HTTP_200_OK)
+
+        queryset = Profile.objects.all()
+
+        # --- Filtering ---
+        name = request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name=name)
+
+        name_icontains = request.query_params.get('name__icontains')
+        if name_icontains:
+            queryset = queryset.filter(name__icontains=name_icontains)
+
+        email = request.query_params.get('email')
+        if email:
+            queryset = queryset.filter(email=email)
+
+        email_icontains = request.query_params.get('email__icontains')
+        if email_icontains:
+            queryset = queryset.filter(email__icontains=email_icontains)
+
+        state = request.query_params.get('state')
+        if state:
+            queryset = queryset.filter(state=state)
+
+        gender = request.query_params.get('gender')
+        if gender:
+            queryset = queryset.filter(gender=gender)
+
+        location_icontains = request.query_params.get('location__icontains')
+        if location_icontains:
+            queryset = queryset.filter(location__icontains=location_icontains)
+
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search)
+                | Q(email__icontains=search)
+                | Q(state__icontains=search)
+                | Q(location__icontains=search)
+            )
+
+        # --- Ordering ---
+        ordering = request.query_params.get('ordering')
+        valid_order_fields = ['id', 'name', 'email', 'dob', 'state', 'gender', 'location']
+        if ordering:
+            field = ordering.lstrip('-')
+            if field in valid_order_fields:
+                queryset = queryset.order_by(ordering)
+
+        serializer = Profileserializer(queryset, many=True)
+        return Response({'status': 'success', 'candidates': serializer.data}, status=status.HTTP_200_OK)
 
     def delete(self, request, pk=None):
         """Delete a candidate profile by primary key.
@@ -86,6 +146,13 @@ class CandidateListView(APIView):
         When ``pk`` is provided, returns the matching CandidateList with
         prefetched candidate profiles, or a 404. Otherwise returns all
         CandidateList records.
+
+        Supports optional query parameter filtering:
+        - ``?title=<str>`` : exact match on title
+        - ``?title__icontains=<str>`` : case-insensitive substring match on title
+        - ``?description__icontains=<str>`` : case-insensitive substring match on description
+        - ``?search=<str>`` : case-insensitive search across both title and description
+        - ``?ordering=<field>`` : order by a field (prefix with ``-`` for descending, e.g. ``-created_at``)
         """
         if pk:
             try:
@@ -100,13 +167,41 @@ class CandidateListView(APIView):
                     {'error': 'Candidate list not found'},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-        else:
-            lists = CandidateList.objects.prefetch_related('candidates').all()
-            serializer = CandidateListSerializer(lists, many=True)
-            return Response(
-                {'status': 'success', 'candidate_lists': serializer.data},
-                status=status.HTTP_200_OK,
+
+        queryset = CandidateList.objects.prefetch_related('candidates').all()
+
+        # --- Filtering ---
+        title = request.query_params.get('title')
+        if title:
+            queryset = queryset.filter(title=title)
+
+        title_icontains = request.query_params.get('title__icontains')
+        if title_icontains:
+            queryset = queryset.filter(title__icontains=title_icontains)
+
+        description_icontains = request.query_params.get('description__icontains')
+        if description_icontains:
+            queryset = queryset.filter(description__icontains=description_icontains)
+
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | Q(description__icontains=search)
             )
+
+        # --- Ordering ---
+        ordering = request.query_params.get('ordering')
+        valid_order_fields = ['title', 'created_at', 'updated_at']
+        if ordering:
+            field = ordering.lstrip('-')
+            if field in valid_order_fields:
+                queryset = queryset.order_by(ordering)
+
+        serializer = CandidateListSerializer(queryset, many=True)
+        return Response(
+            {'status': 'success', 'candidate_lists': serializer.data},
+            status=status.HTTP_200_OK,
+        )
 
     def put(self, request, pk=None, format=None):
         """Partially update an existing candidate list by primary key.
