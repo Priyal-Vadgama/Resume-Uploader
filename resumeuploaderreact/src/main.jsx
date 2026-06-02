@@ -1,3 +1,9 @@
+/**
+ * Application entry point.
+ *
+ * Mounts the React application inside the ``#root`` DOM element with
+ * StrictMode enabled and the Redux store provider wrapping the App.
+ */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

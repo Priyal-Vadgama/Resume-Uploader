@@ -1,3 +1,8 @@
+"""Root URL configuration for the resumeuploader project.
+
+Routes the admin interface, API endpoints, and media file serving.
+"""
+
 from django.contrib import admin
 from django.urls import path,include
 from django.conf import settings
