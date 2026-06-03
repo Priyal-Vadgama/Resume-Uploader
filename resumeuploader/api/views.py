@@ -33,6 +33,7 @@ class ProfileView(APIView):
         When ``pk`` is provided, returns the matching Profile or a 404.
         Otherwise returns all Profile records.
 
+
         Supports optional query parameter filtering:
         - ``?name=<str>`` : exact match on name
         - ``?name__icontains=<str>`` : case-insensitive substring match on name
@@ -146,6 +147,7 @@ class CandidateListView(APIView):
         When ``pk`` is provided, returns the matching CandidateList with
         prefetched candidate profiles, or a 404. Otherwise returns all
         CandidateList records.
+
 
         Supports optional query parameter filtering:
         - ``?title=<str>`` : exact match on title
